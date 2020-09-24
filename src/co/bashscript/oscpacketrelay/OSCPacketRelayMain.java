@@ -13,7 +13,7 @@ public class OSCPacketRelayMain {
             System.err.println("Unable to set look and feel, using default");
         }
 
-        MainWindow frame = new MainWindow();
+        MainWindow frame = new MainWindow("1.0.2");
         frame.setVisible(true);
     }
 }

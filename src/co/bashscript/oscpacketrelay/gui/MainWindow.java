@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.net.SocketException;
 
 public class MainWindow extends JFrame {
-    public static final String version = "1.0.1";
 
     // GUI Components
     private JPanel panel;
@@ -35,7 +34,7 @@ public class MainWindow extends JFrame {
 
 
     // Constructors
-    public MainWindow() {
+    public MainWindow(String version) {
         super("OSCPacketRelay - v" + version);
         relayer = new OSCPacketRelayer(this);
         init();
@@ -209,7 +208,17 @@ public class MainWindow extends JFrame {
         tableSources.setCellSelectionEnabled(true);
         tableSources.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        tableTargetsModel = new DefaultTableModel(new Object[] { "Enabled", "Source", "Message", "Target", "Port", "Min", "Max", "Sending" }, 0) {
+        tableTargetsModel = new DefaultTableModel(new Object[] {
+                "Enabled",
+                "Source",
+                "Message",
+                "Target",
+                "Port",
+                "Min",
+                "Max",
+                "Round",
+                "Scale",
+                "Sending" }, 0) {
             @Override
             public Class getColumnClass(int columnIndex) {
                 switch(columnIndex) {
@@ -220,7 +229,9 @@ public class MainWindow extends JFrame {
                     case 4: return Integer.class;
                     case 5: return Float.class;
                     case 6: return Float.class;
-                    case 7: return Float.class;
+                    case 7: return Boolean.class;
+                    case 8: return Float.class;
+                    case 9: return Float.class;
                     default: return String.class;
                 }
             }
@@ -237,7 +248,9 @@ public class MainWindow extends JFrame {
                     case 4: return target.getPort();
                     case 5: return target.getMin();
                     case 6: return target.getMax();
-                    case 7: return target.getValue();
+                    case 7: return target.isRound();
+                    case 8: return target.getScale();
+                    case 9: return target.getValue();
                     default: return String.class;
                 }
             }
@@ -274,7 +287,13 @@ public class MainWindow extends JFrame {
                     case 6:
                         target.setMax((float) aValue);
                         break;
-                    case 7: break;
+                    case 7:
+                        target.setRound((boolean) aValue);
+                        break;
+                    case 8:
+                        target.setScale((float) aValue);
+                        break;
+                    case 9: break;
                 }
             }
 
@@ -287,9 +306,11 @@ public class MainWindow extends JFrame {
                     case 2: return (target.isEnabled())?false:true;
                     case 3: return (target.isEnabled())?false:true;
                     case 4: return (target.isEnabled())?false:true;
-                    case 5: return (target.isEnabled())?false:true;
-                    case 6: return (target.isEnabled())?false:true;
-                    case 7: return false;
+                    case 5: return true;
+                    case 6: return true;
+                    case 7: return true;
+                    case 8: return true;
+                    case 9: return false;
                 }
                 return false;
             }
