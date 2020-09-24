@@ -160,7 +160,7 @@ public class MainWindow extends JFrame {
                     "Remove Target",
                     JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 relayer.removeTarget(row);
-                tableTargetsModel.removeRow(row);
+                tableTargetsModel.fireTableDataChanged();
             } else {
             }
         });
