@@ -20,6 +20,8 @@ public class OSCPacketTarget implements Serializable {
     private int port;
     private float min;
     private float max;
+    private boolean round;
+    private float scale;
     private transient float value;
 
     // internal variables
@@ -27,17 +29,15 @@ public class OSCPacketTarget implements Serializable {
 
     // Constructors
     public OSCPacketTarget() throws SocketException {
-        this(false, "", "", "", 8000, 0, 100);
-    }
-
-    public OSCPacketTarget(boolean enabled, String source, String ip, String message, int port, float min, float max) throws SocketException {
-        this.enabled = enabled;
-        this.source = source;
-        this.ip = ip;
-        this.message = message;
-        this.port = port;
-        this.min = min;
-        this.max = max;
+        this.enabled = false;
+        this.source = "";
+        this.ip = "";
+        this.message = "";
+        this.port = 8000;
+        this.min = 0;
+        this.max = 100;
+        this.round = false;
+        this.scale = 1;
     }
 
     // methods
@@ -47,7 +47,13 @@ public class OSCPacketTarget implements Serializable {
         }
         if(isEnabled()) {
             byte[] message = getMessage().getBytes();
-            int number_of_bytes = ((int) Math.ceil((message.length+8) / 4.0)) * 4;
+
+            int extra = 0;
+            if(message.length % 4 == 0) {
+                extra = 1;
+            }
+
+            int number_of_bytes = ((int) Math.ceil((message.length+8 + extra) / 4.0)) * 4;
 
             // the message part
             byte[] buffer = new byte[number_of_bytes];
@@ -69,7 +75,12 @@ public class OSCPacketTarget implements Serializable {
     }
 
     public float getTranslatedValue(float value) {
-        return scaleBetween(value,0, 100, getMin(), getMax());
+        float v = scaleBetween(value, 0, 100, getMin(), getMax());
+
+        if(isRound()) {
+            v = Math.round(v);
+        }
+        return v * scale;
     }
 
     private float scaleBetween(float unscaledNum, float minAllowed, float maxAllowed, float min, float max) {
@@ -92,5 +103,9 @@ public class OSCPacketTarget implements Serializable {
     public void setMin(float min) { this.min = min; }
     public float getMax() { return max; }
     public void setMax(float max) { this.max = max; }
+    public boolean isRound() { return round; }
+    public void setRound(boolean round) { this.round = round; }
+    public float getScale() { return scale; }
+    public void setScale(float scale) { this.scale = scale; }
     public float getValue() { return value; }
 }
