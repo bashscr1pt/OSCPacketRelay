@@ -1,6 +1,6 @@
-package co.bashscript.oscpacketrelay;
+package co.bashscript.oscpacketrelay.apps.relay;
 
-import co.bashscript.oscpacketrelay.gui.MainWindow;
+import co.bashscript.oscpacketrelay.apps.OSCPacket;
 
 import javax.swing.*;
 import java.io.*;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class OSCPacketRelayer {
     // variables
-    private MainWindow window;
+    private RelayWindow window;
 
     // internal variables
     private Thread thread_listen;
@@ -25,7 +25,7 @@ public class OSCPacketRelayer {
     private final List<OSCPacketTarget> targets = new ArrayList<>();
 
     // constructor
-    public OSCPacketRelayer(MainWindow window) {
+    public OSCPacketRelayer(RelayWindow window) {
         this.window = window;
 
         thread_send = new Thread(() -> {
@@ -47,7 +47,7 @@ public class OSCPacketRelayer {
                         if(targets.get(i).getSource().equals(packet.getMessage())) {
                             cells_to_update.add(i);
                             try {
-                                targets.get(i).send(packet);
+                                targets.get(i).send(packet.getValue());
                             } catch (Throwable e) {
                                 e.printStackTrace();
                             }
@@ -56,8 +56,8 @@ public class OSCPacketRelayer {
                 }
 
                 SwingUtilities.invokeLater(() -> {
-                    cells_to_update.stream().forEach(e -> window.updateTargetsCell(e));
-                    window.setLabelStatus("Queue Size: " + queue.size());
+                    cells_to_update.stream().forEach(e -> window.fireTargetsUpdated(e, targets.get(e)));
+                    window.fireStatus("Queue Size: " + queue.size());
                 });
             }
         });
@@ -134,18 +134,14 @@ public class OSCPacketRelayer {
         // Update GUI's
         SwingUtilities.invokeLater(() -> {
             OSCPacket[] sources = getSources();
-            if(refresh_cell.get()) {
-                for(int i=0; i<sources.length; i++) {
-                    if(sources[i] == packet) {
-                        window.updateSourcesCells(i);
-                        break;
-                    }
+            for(int i=0; i<sources.length; i++) {
+                if(sources[i] == packet) {
+                    window.fireSourceUpdated(refresh_cell.get()?i:-1, sources[i], packet);
+                    break;
                 }
-            } else {
-                window.updateSourcesRows();
             }
 
-            window.setLabelStatus("Queue Size: " + queue.size());
+            window.fireStatus("Queue Size" + queue.size());
         });
     }
 
@@ -172,11 +168,15 @@ public class OSCPacketRelayer {
     public void load(File file) throws IOException, ClassNotFoundException {
         ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
 
-        List<OSCPacketTarget> objects = (List<OSCPacketTarget>)in.readObject();
-        in.close();
-        synchronized (targets) {
-            targets.clear();
-            targets.addAll(objects);
+        Object o = in.readObject();
+        if(o instanceof List && ((List<?>) o).size() > 0 && ((List<?>) o).get(0).getClass() == OSCPacketTarget.class) {
+            List<OSCPacketTarget> objects = (List<OSCPacketTarget>)o;
+            in.close();
+
+            synchronized (targets) {
+                targets.clear();
+                targets.addAll(objects);
+            }
         }
     }
 

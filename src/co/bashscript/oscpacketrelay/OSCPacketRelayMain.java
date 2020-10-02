@@ -1,10 +1,12 @@
 package co.bashscript.oscpacketrelay;
 
-import co.bashscript.oscpacketrelay.gui.MainWindow;
+import co.bashscript.oscpacketrelay.apps.StartupWindow;
 
 import javax.swing.*;
 
 public class OSCPacketRelayMain {
+    public static String VERSION = "1.1.0";
+
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -13,7 +15,7 @@ public class OSCPacketRelayMain {
             System.err.println("Unable to set look and feel, using default");
         }
 
-        MainWindow frame = new MainWindow("1.0.2");
+        StartupWindow frame = new StartupWindow();
         frame.setVisible(true);
     }
 }

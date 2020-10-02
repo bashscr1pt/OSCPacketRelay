@@ -1,4 +1,4 @@
-package co.bashscript.oscpacketrelay;
+package co.bashscript.oscpacketrelay.apps;
 
 import java.util.Arrays;
 

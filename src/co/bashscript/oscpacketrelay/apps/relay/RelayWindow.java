@@ -1,18 +1,17 @@
-package co.bashscript.oscpacketrelay.gui;
+package co.bashscript.oscpacketrelay.apps.relay;
 
-import co.bashscript.oscpacketrelay.OSCPacket;
-import co.bashscript.oscpacketrelay.OSCPacketTarget;
-import co.bashscript.oscpacketrelay.OSCPacketRelayer;
+import co.bashscript.oscpacketrelay.*;
+import co.bashscript.oscpacketrelay.apps.OSCPacket;
+import co.bashscript.oscpacketrelay.gui.OSCPacketRelayAppWindow;
 import co.bashscript.oscpacketrelay.utils.BSValidators;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
 
-public class MainWindow extends JFrame {
+public class RelayWindow extends OSCPacketRelayAppWindow {
 
     // GUI Components
     private JPanel panel;
@@ -27,114 +26,19 @@ public class MainWindow extends JFrame {
     // Internal GUI Variables
     private DefaultTableModel tableSourcesModel;
     private DefaultTableModel tableTargetsModel;
-    private File workingPath;
 
     // Internal Variables
-    private OSCPacketRelayer relayer;
-
+    private OSCPacketRelayer relayer = new OSCPacketRelayer(this);
 
     // Constructors
-    public MainWindow(String version) {
-        super("OSCPacketRelay - v" + version);
-        relayer = new OSCPacketRelayer(this);
+    public RelayWindow() {
+        super( "OSCPacketRelay - Relayer - v" + OSCPacketRelayMain.VERSION);
         init();
     }
 
     private void init() {
         setContentPane(panel);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(800, 600);
-        setLocationByPlatform(true);
-        setResizable(true);
-
-        // Setup Menu
-        JMenuBar menu_bar = new JMenuBar();
-
-        JMenu menu_file = new JMenu("File");
-        JMenuItem menu_file_open = new JMenuItem("Open...");
-        menu_file.add(menu_file_open);
-        menu_file.add(new JSeparator());
-        JMenuItem menu_file_save = new JMenuItem("Save");
-        menu_file_save.setAccelerator(KeyStroke.getKeyStroke("control S"));
-        menu_file.add(menu_file_save);
-        JMenuItem menu_file_save_as = new JMenuItem("Save As...");
-        menu_file.add(menu_file_save_as);
-        menu_file.add(new JSeparator());
-        JMenuItem menu_file_exit = new JMenuItem("Exit");
-        menu_file.add(menu_file_exit);
-        menu_bar.add(menu_file);
-
-        JMenu menu_help = new JMenu("Help");
-        JMenuItem menu_help_about = new JMenuItem("About");
-        menu_help.add(menu_help_about);
-        menu_bar.add(menu_help);
-        setJMenuBar(menu_bar);
-
-        // menu actions
-
-        menu_help_about.addActionListener((e) -> {
-            About about = new About();
-            about.setTitle("About");
-            about.pack();
-            about.setLocationRelativeTo(MainWindow.this);
-            about.setVisible(true);
-        });
-
-        menu_file_open.addActionListener((e) -> {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Specify a file to open");
-            int userSelection = fileChooser.showOpenDialog(MainWindow.this);
-            if (userSelection == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                try {
-                    relayer.load(file);
-                    workingPath = file;
-                    menu_file_save.setEnabled(true);
-                    tableTargetsModel.fireTableDataChanged();
-                } catch (IOException | ClassNotFoundException ioException) {
-                    JOptionPane.showConfirmDialog(MainWindow.this,
-                            "Error Opening: " + ioException.getMessage(),
-                            "Error Opening",
-                            JOptionPane.OK_OPTION);
-                }
-            }
-        });
-        menu_file_save.setEnabled(false);
-        menu_file_save.addActionListener((e) -> {
-            if(workingPath == null) {
-                return;
-            }
-            try {
-                relayer.save(workingPath);
-            } catch (IOException ioException) {
-                JOptionPane.showConfirmDialog(MainWindow.this,
-                        "Error Saving: " + ioException.getMessage(),
-                        "Error Saving",
-                        JOptionPane.OK_OPTION);
-            }
-        });
-        menu_file_save_as.addActionListener((e) -> {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Specify a file to save");
-            int userSelection = fileChooser.showSaveDialog(MainWindow.this);
-            if (userSelection == JFileChooser.APPROVE_OPTION) {
-                File file = fileChooser.getSelectedFile();
-                try {
-                    relayer.save(file);
-                    workingPath = file;
-                    menu_file_save.setEnabled(true);
-                } catch (IOException ioException) {
-                    JOptionPane.showConfirmDialog(MainWindow.this,
-                            "Error Saving: " + ioException.getMessage(),
-                            "Error Saving",
-                            JOptionPane.OK_OPTION);
-                }
-            }
-        });
-        menu_file_exit.addActionListener((e) -> {
-            MainWindow.this.dispatchEvent(new WindowEvent(MainWindow.this, WindowEvent.WINDOW_CLOSING));
-        });
-
 
         // setup buttons
         buttonAddTarget.addActionListener((e) -> {
@@ -142,7 +46,7 @@ public class MainWindow extends JFrame {
             try {
                 OSCPacketTarget target = new OSCPacketTarget();
                 relayer.addTarget(target);
-                tableTargetsModel.fireTableDataChanged();
+                fireTargetsUpdated(-1, target);
             } catch (SocketException socketException) {
                 socketException.printStackTrace();
             }
@@ -154,7 +58,7 @@ public class MainWindow extends JFrame {
                 return;
             }
 
-            if (JOptionPane.showConfirmDialog(MainWindow.this,
+            if (JOptionPane.showConfirmDialog(RelayWindow.this,
                     "Are you sure want to remove this row?",
                     "Remove Target",
                     JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
@@ -357,17 +261,34 @@ public class MainWindow extends JFrame {
         labelStatus.setText("");
     }
 
-    public void updateSourcesRows() {
-        tableSourcesModel.fireTableDataChanged();
-    }
-    public void updateSourcesCells(int row) {
-        tableSourcesModel.fireTableCellUpdated(row, 1);
-    }
-    public void setLabelStatus(String text) {
-        labelStatus.setText(text);
-    }
-    public void updateTargetsCell(int row) {
-        tableTargetsModel.fireTableCellUpdated(row, 7);
+    @Override
+    public void onFileOpen(File file) throws IOException, ClassNotFoundException {
+        relayer.load(file);
+        tableTargetsModel.fireTableDataChanged();
     }
 
+    @Override
+    public void onFileSave(File path) throws IOException {
+        relayer.save(path);
+    }
+
+    public void fireSourceUpdated(int index, OSCPacket source, OSCPacket packet) {
+        if(index == -1) {
+            tableSourcesModel.fireTableDataChanged();
+        } else {
+            tableSourcesModel.fireTableCellUpdated(index, 1);
+        }
+    }
+
+    public void fireTargetsUpdated(int index, OSCPacketTarget target) {
+        if(index == -1) {
+            tableTargetsModel.fireTableDataChanged();
+        } else {
+            tableTargetsModel.fireTableCellUpdated(index, 7);
+        }
+    }
+
+    public void fireStatus(String text) {
+        labelStatus.setText(text);
+    }
 }

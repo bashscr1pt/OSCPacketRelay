@@ -1,6 +1,8 @@
-package co.bashscript.oscpacketrelay;
+package co.bashscript.oscpacketrelay.apps.relay;
 
+import co.bashscript.oscpacketrelay.apps.OSCPacket;
 import co.bashscript.oscpacketrelay.utils.BSMath;
+import co.bashscript.oscpacketrelay.utils.OSCUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,37 +43,14 @@ public class OSCPacketTarget implements Serializable {
     }
 
     // methods
-    public void send(OSCPacket packet) throws IOException {
+    public void send(float v) throws IOException {
         if(socket == null) {
             socket = new DatagramSocket();
         }
         if(isEnabled()) {
-            byte[] message = getMessage().getBytes();
-
-            int extra = 0;
-            if(message.length % 4 == 0) {
-                extra = 1;
-            }
-
-            int number_of_bytes = ((int) Math.ceil((message.length+8 + extra) / 4.0)) * 4;
-
-            // the message part
-            byte[] buffer = new byte[number_of_bytes];
-            System.arraycopy(message,0,buffer,0,message.length);
-
-            // the middle bits
-            message = ",f".getBytes();
-            System.arraycopy(message,0,buffer,buffer.length-8,message.length);
-
-            // value part
-            int intBits =  Float.floatToIntBits(getTranslatedValue(packet.getValue()));
-            byte[] value_bytes = new byte[] {(byte) (intBits >> 24), (byte) (intBits >> 16), (byte) (intBits >> 8), (byte) (intBits) };
-            System.arraycopy(value_bytes,0,buffer,buffer.length-4,value_bytes.length);
-
-            DatagramPacket sendPacket = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), port);
-            socket.send(sendPacket);
+            OSCUtils.send(socket, InetAddress.getByName(getIp()), getPort(), getMessage(), getTranslatedValue(v));
         }
-        value = getTranslatedValue(packet.getValue());
+        value = getTranslatedValue(v);
     }
 
     public float getTranslatedValue(float value) {
