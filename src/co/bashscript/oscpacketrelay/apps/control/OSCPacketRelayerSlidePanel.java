@@ -1,7 +1,14 @@
 package co.bashscript.oscpacketrelay.apps.control;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Base64;
 
 public class OSCPacketRelayerSlidePanel extends JPanel{
 
@@ -45,11 +52,22 @@ public class OSCPacketRelayerSlidePanel extends JPanel{
     @Override
     public void paint(Graphics g) {
         super.paint(g);
+
+        if(parent.getThumbnail() != null) {
+            try {
+                byte[] bytes = Base64.getDecoder().decode(parent.getThumbnail());
+                InputStream in = new ByteArrayInputStream(bytes);
+                Image bImageFromConvert = ImageIO.read(in);
+                g.drawImage(bImageFromConvert, 0, 10, null);
+            } catch (IOException e) {
+            }
+        }
     }
 
     public void update() {
         labelTitle.setText(parent.getName());
         setBounds((WIDTH + PADDING) * parent.getGridX(),(HEIGHT + PADDING) * parent.getGridY(),WIDTH,HEIGHT);
+
 
         if(parent.isPlay()) {
             buttonPlay.setText("PLAYING!");

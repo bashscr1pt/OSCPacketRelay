@@ -24,6 +24,7 @@ public class OSCPacketRelayerSlide {
     // internal variable
     private int gridX = -1;
     private int gridY = -1;
+    private String thumbnail;
 
     // internal non stored variables
     @JsonIgnore private OSCPacketRelayerSlidePanel panel;
@@ -41,6 +42,12 @@ public class OSCPacketRelayerSlide {
 
         if(values.containsKey("name")) {
             this.name = values.get("name").toString();
+        }
+
+        if(values.containsKey("thumbnail")) {
+            if(values.get("thumbnail") != null) {
+                this.thumbnail = values.get("thumbnail").toString();
+            }
         }
 
         if(values.containsKey("targets")) {
@@ -156,4 +163,6 @@ public class OSCPacketRelayerSlide {
     public List<OSCPacketTarget> getTargets() { return targets; } // needed for json export
     public void setRelayer(OSCPacketRelayer relayer) { this.relayer = relayer; }
     public OSCPacketRelayer getRelayer() { return relayer; }
+    public String getThumbnail() { return thumbnail; }
+    public void setThumbnail(String thumbnail) { this.thumbnail = thumbnail; }
 }

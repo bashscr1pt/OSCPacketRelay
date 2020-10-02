@@ -73,7 +73,6 @@ public class OSCPacketTarget {
 
         // need to process rules
         if(map.containsKey("dynamicValues")) {
-            System.out.println(((List<Map>) map.get("dynamicValues")).size());
             dynamicValues.addAll(((List<Map>) map.get("dynamicValues")).stream()
                     .map(e -> {
                         if(e.get("key").equals("scale")) {

@@ -9,14 +9,17 @@ import co.bashscript.oscpacketrelay.utils.BSValidators;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -46,6 +49,8 @@ public class ControlWindow extends OSCPacketRelayAppWindow {
     private JLabel labelSlideTargetDynamicOutput;
     private JPanel panelSlideDynamicValues;
     private JButton buttonSlideDynamicValueAdd;
+    private JButton buttonChangeThumbnail;
+    private JPanel panelThumbnail;
 
     // Internal Variables
     private final List<OSCPacketRelayerSlide> grid = new ArrayList<>();
@@ -71,6 +76,28 @@ public class ControlWindow extends OSCPacketRelayAppWindow {
         panelSlides.setLayout(null);
         panelSlideValues.setVisible(false);
         panelSlideDynamicValuesArea.setVisible(false);
+        panelThumbnail.setLayout(new BorderLayout());
+        panelThumbnail.add(new JPanel() {
+            @Override
+            public void paint(Graphics g) {
+                super.paint(g);
+
+                if(selectedSlide == null) {
+                    return;
+                }
+
+                if(selectedSlide.getThumbnail() != null) {
+                    try {
+                        byte[] bytes = Base64.getDecoder().decode(selectedSlide.getThumbnail());
+                        InputStream in = new ByteArrayInputStream(bytes);
+                        Image bImageFromConvert = ImageIO.read(in);
+                        g.drawImage(bImageFromConvert, 0, 0, null);
+                    } catch (IOException e) {
+                    }
+                }
+
+            }
+        }, BorderLayout.CENTER);
 
         // tables
         tableSourcesModel = new DefaultTableModel(new Object[] { "Message", "Value" }, 0) {
@@ -248,6 +275,35 @@ public class ControlWindow extends OSCPacketRelayAppWindow {
         });
 
         // buttons
+        buttonChangeThumbnail.addActionListener((e) -> {
+            JFileChooser fileChooser = new JFileChooser();
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Images", "png", "gif", "jpg", "jpeg");
+            fileChooser.setFileFilter(filter);
+            fileChooser.setDialogTitle("Specify a file to open");
+            int userSelection = fileChooser.showOpenDialog(ControlWindow.this);
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File file = fileChooser.getSelectedFile();
+
+
+                try {
+                    BufferedImage image = ImageIO.read(file);
+
+                    image = resizeImage(image, 100, 60);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ImageIO.write( image, "png", baos );
+                    baos.flush();
+                    byte[] imageInByte = baos.toByteArray();
+                    baos.close();
+                    selectedSlide.setThumbnail(new String(Base64.getEncoder().encode(imageInByte)));
+                    selectedSlide.getPanel().repaint();
+
+                    panelThumbnail.repaint();
+
+                } catch (IOException ioException) {
+                    JOptionPane.showConfirmDialog(ControlWindow.this, "Unable to own image", "Error loading Thumbnail", JOptionPane.OK_OPTION);
+                }
+            }
+        });
         buttonAddSlide.addActionListener((e) -> {
             Point point = gridFindFreePoint();
             OSCPacketRelayerSlide slide = new OSCPacketRelayerSlide(relayer, point.x, point.y);
@@ -414,6 +470,19 @@ public class ControlWindow extends OSCPacketRelayAppWindow {
                 updateDynamicValuesPanel();
             }
         };
+    }
+
+    public static BufferedImage resizeImage(final Image image, int width, int height) {
+        final BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        final Graphics2D graphics2D = bufferedImage.createGraphics();
+        graphics2D.setComposite(AlphaComposite.Src);
+        //below three lines are for RenderingHints for better image quality at cost of higher processing time
+        graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION,RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        graphics2D.setRenderingHint(RenderingHints.KEY_RENDERING,RenderingHints.VALUE_RENDER_QUALITY);
+        graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics2D.drawImage(image, 0, 0, width, height, null);
+        graphics2D.dispose();
+        return bufferedImage;
     }
 
     private void updateDynamicValuesPanel() {

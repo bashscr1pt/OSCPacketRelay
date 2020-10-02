@@ -32,25 +32,18 @@ public abstract class OSCDynamicValue implements DocumentListener {
 
     public abstract float execute(float input);
     public void makePanel(JPanel panel, int index, Consumer<Integer> onDelete) {
-        panelLoaded= true;
+        panelLoaded = true;
         resetButtons();
         buttonDelete.addActionListener((e) -> {
             onDelete.accept(index);
         });
 
         GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.NORTHWEST;
         c.gridx = 0;
         c.gridy = index;
-        panel.add(buttonAddAbove, c);
-        c.gridx++;
-        panel.add(buttonAddBelow, c);
-        c.gridx++;
-        panel.add(buttonMoveUp, c);
-        c.gridx++;
-        panel.add(buttonMoveDown, c);
-        c.gridx++;
-        panel.add(buttonDelete, c);
 
+        panel.add(buttonDelete, c);
         buildPanel(panel, c);
     }
     protected abstract void buildPanel(JPanel panel, GridBagConstraints c);
